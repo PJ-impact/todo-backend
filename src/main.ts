@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // 1. Set global route prefix to /api
- app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api');
 
   // 2. Enable URI versioning (/v1, /v2, etc.)
   app.enableVersioning({
@@ -24,7 +24,7 @@ async function bootstrap() {
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  
+
   // Serve Swagger UI at /docs so it doesn't conflict with /api endpoint routes
   SwaggerModule.setup('/api/v1/docs', app, documentFactory);
 

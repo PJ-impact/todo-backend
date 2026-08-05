@@ -4,6 +4,6 @@ import { TodoBackendController } from './todo-backend.controller';
 
 @Module({
   providers: [TodoBackendService],
-  controllers: [TodoBackendController]
+  controllers: [TodoBackendController],
 })
 export class TodoBackendModule {}
