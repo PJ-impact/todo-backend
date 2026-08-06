@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -8,6 +8,9 @@ async function bootstrap() {
 
   // 1. Set global route prefix to /api
   app.setGlobalPrefix('api');
+
+  // 2. Enable global validation pipe
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
 
   // 2. Enable URI versioning (/v1, /v2, etc.)
   app.enableVersioning({
