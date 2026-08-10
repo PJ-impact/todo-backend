@@ -28,4 +28,11 @@ export class UsersService {
   }) {
     return this.db.insert(users).values(data).returning();
   }
+
+  async updatePassword(userId: number, hashedPassword: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, userId));
+  }
 }
