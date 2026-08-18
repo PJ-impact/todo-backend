@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { LocalStrategy } from './local.strategy';
 import { JwtStrategy } from './jwt.strategy';
+import { JwtBlacklistGuard } from './jwt-blacklist.guard';
 import { UsersService } from '../users/users.service';
 import { DatabaseModule } from '../database/database.module';
 import { EmailService } from './email.service';
@@ -26,7 +27,16 @@ import { EmailService } from './email.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UsersService, LocalStrategy, JwtStrategy, EmailService],
-  exports: [AuthService],
+  providers: [
+    AuthService,
+    UsersService,
+    LocalStrategy,
+    JwtStrategy,
+    JwtBlacklistGuard,
+    EmailService,
+  ],
+  // Export AuthService and JwtBlacklistGuard so other modules (e.g. TodoBackendModule)
+  // can inject them without re-declaring the dependency chain
+  exports: [AuthService, JwtBlacklistGuard],
 })
 export class AuthModule {}

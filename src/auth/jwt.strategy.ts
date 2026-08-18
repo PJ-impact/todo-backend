@@ -9,12 +9,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      // Use ConfigService so the secret is read after .env is fully loaded
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'change_this_secret',
+      secretOrKey:
+        configService.get<string>('JWT_SECRET') || 'change_this_secret',
     });
   }
 
+  /**
+   * Called after the JWT signature is verified.
+   * Whatever we return here becomes req.user in route handlers and guards.
+   *
+   * We include jti so the JwtBlacklistGuard can check it against the blacklist
+   * without having to decode the token again.
+   */
   async validate(payload: any) {
-    return { userId: payload.sub, email: payload.email };
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      jti: payload.jti, // <-- exposed so JwtBlacklistGuard can read it
+    };
   }
 }

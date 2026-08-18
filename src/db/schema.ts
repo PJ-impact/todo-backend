@@ -9,15 +9,28 @@ export const users = sqliteTable('users', {
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),
   password: text('password').notNull(),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  createdAt: text('created_at')
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+
+  // Soft-delete fields:
+  // isActive = false means the user has requested account deletion.
+  // deletedAt records when they clicked "delete my account."
+  // The auto-wipe job uses deletedAt to permanently erase after 30 days.
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  deletedAt: text('deleted_at'),
 });
 
 // 2. Refresh Tokens Table
 export const refreshTokens = sqliteTable('refresh_tokens', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   tokenHash: text('token_hash').notNull(),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  createdAt: text('created_at')
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
   expiresAt: text('expires_at').notNull(),
   revokedAt: text('revoked_at'),
 });
@@ -37,7 +50,9 @@ export const todos = sqliteTable('todos', {
   status: text('status').notNull().default('in_progress'),
 
   // Auto-set by the database when the row is inserted — never passed manually
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  createdAt: text('created_at')
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
 
   // Null until the todo is marked completed; set by the application when status → 'completed'
   completedAt: text('completed_at'),
@@ -48,17 +63,36 @@ export const todos = sqliteTable('todos', {
     .references(() => users.id, { onDelete: 'cascade' }),
 });
 
-// 4. Password Reset Tokens Table
+// 4. Token Blacklist Table
+// When a user logs out, their JWT is stored here so it cannot be reused
+// even though it hasn't expired yet. The token's unique ID (jti) is stored
+// to keep the table small — no need to store the full token string.
+export const tokenBlacklist = sqliteTable('token_blacklist', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  // jti is the unique "JWT ID" claim we sign into every token
+  jti: text('jti').notNull().unique(),
+  // Store expiry so a cleanup job can prune expired entries automatically
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at')
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// 5. Password Reset Tokens Table
 export const passwordResetTokens = sqliteTable('password_reset_tokens', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   // We store a hash of the token, never the raw value — same principle as passwords
   tokenHash: text('token_hash').notNull().unique(),
   expiresAt: text('expires_at').notNull(),
-  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+  createdAt: text('created_at')
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
 });
 
-// 5. Table Relations
+// 6. Table Relations
 export const usersRelations = relations(users, ({ many }) => ({
   todos: many(todos),
   refreshTokens: many(refreshTokens),
@@ -79,9 +113,12 @@ export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
   }),
 }));
 
-export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
-  user: one(users, {
-    fields: [passwordResetTokens.userId],
-    references: [users.id],
+export const passwordResetTokensRelations = relations(
+  passwordResetTokens,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [passwordResetTokens.userId],
+      references: [users.id],
+    }),
   }),
-}));
+);

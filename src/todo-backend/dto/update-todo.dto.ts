@@ -21,7 +21,8 @@ export class UpdateTodoDto {
 
   @ApiPropertyOptional({
     enum: TodoStatus,
-    description: 'Updated status. Setting to "completed" will record the completion time.',
+    description:
+      'Updated status. Setting to "completed" will record the completion time.',
   })
   @IsEnum(TodoStatus, {
     message: 'status must be one of: in_progress, completed',

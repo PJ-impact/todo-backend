@@ -26,7 +26,8 @@ export class CreateTodoDto {
   @ApiPropertyOptional({
     enum: TodoStatus,
     default: TodoStatus.IN_PROGRESS,
-    description: 'Status of the todo. Defaults to "in_progress" if not provided.',
+    description:
+      'Status of the todo. Defaults to "in_progress" if not provided.',
   })
   @IsEnum(TodoStatus, {
     message: 'status must be one of: in_progress, completed',

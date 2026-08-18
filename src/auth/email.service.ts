@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
@@ -20,7 +24,10 @@ export class EmailService {
     });
   }
 
-  async sendPasswordResetEmail(toEmail: string, resetLink: string): Promise<void> {
+  async sendPasswordResetEmail(
+    toEmail: string,
+    resetLink: string,
+  ): Promise<void> {
     const from = this.configService.get<string>('GMAIL_USER');
 
     try {
@@ -51,7 +58,9 @@ export class EmailService {
       this.logger.log(`Password reset email sent to ${toEmail}`);
     } catch (error) {
       this.logger.error(`Failed to send reset email to ${toEmail}`, error);
-      throw new InternalServerErrorException('Failed to send reset email. Please try again.');
+      throw new InternalServerErrorException(
+        'Failed to send reset email. Please try again.',
+      );
     }
   }
 }
