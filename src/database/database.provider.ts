@@ -1,5 +1,5 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
 import * as schema from '../db/schema';
 
 export const DRIZZLE = 'DRIZZLE';
@@ -7,7 +7,7 @@ export const DRIZZLE = 'DRIZZLE';
 export const databaseProvider = {
   provide: DRIZZLE,
   useFactory: () => {
-    const sqlite = new Database('sqlite.db');
-    return drizzle(sqlite, { schema });
+    const sql = neon(process.env.DATABASE_URL!);
+    return drizzle(sql, { schema });
   },
 };

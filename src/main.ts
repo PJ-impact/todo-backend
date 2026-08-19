@@ -25,7 +25,9 @@ export class ThrottlerExceptionFilter implements ExceptionFilter {
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  app.getHttpAdapter().getInstance().set('trust proxy', 'loopback, linklocal, uniquelocal');
+  // Trust the first proxy hop — required on Render (and most cloud platforms)
+  // so that req.ip reflects the real client IP, not the load balancer's IP.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
   
   app.useGlobalFilters(new ThrottlerExceptionFilter());

@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { eq, and, like } from 'drizzle-orm';
+import { eq, and, ilike } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.provider';
 import { todos } from '../db/schema';
 import { CreateTodoDto, TodoStatus } from './dto/create-todo.dto';
@@ -48,26 +48,26 @@ export class TodoBackendService {
     }
 
     // Only add a search filter if the caller provided one.
-    // LIKE '%search%' is case-insensitive in SQLite by default for ASCII.
+    // ilike is case-insensitive LIKE for PostgreSQL
     if (search) {
-      conditions.push(like(todos.title, `%${search}%`));
+      conditions.push(ilike(todos.title, `%${search}%`));
     }
 
     // and(...conditions) merges all conditions with SQL AND
     return this.db
       .select()
       .from(todos)
-      .where(and(...conditions))
-      .all();
+      .where(and(...conditions));
   }
 
   // Get a single todo by ID — only if it belongs to the authenticated user
   async findOne(userId: number, id: number) {
-    const todo = await this.db
+    const result = await this.db
       .select()
       .from(todos)
-      .where(and(eq(todos.id, id), eq(todos.userId, userId)))
-      .get();
+      .where(and(eq(todos.id, id), eq(todos.userId, userId)));
+
+    const todo = result[0];
 
     if (!todo) {
       // Deliberately vague: we say "not found" rather than "not yours"
@@ -86,7 +86,7 @@ export class TodoBackendService {
 
     const completedAt =
       dto.status === TodoStatus.COMPLETED
-        ? new Date().toISOString()
+        ? new Date()
         : dto.status === TodoStatus.IN_PROGRESS
           ? null // clear completedAt when reverting to in_progress
           : undefined; // no change if status wasn't passed
@@ -121,7 +121,7 @@ export class TodoBackendService {
     const newStatus = isCompleting
       ? TodoStatus.COMPLETED
       : TodoStatus.IN_PROGRESS;
-    const completedAt = isCompleting ? new Date().toISOString() : null;
+    const completedAt = isCompleting ? new Date() : null;
 
     const result = await this.db
       .update(todos)
