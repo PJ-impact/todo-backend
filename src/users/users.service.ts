@@ -10,19 +10,27 @@ export class UsersService {
   // ─── Lookups ───────────────────────────────────────────────────────────────
 
   async findByEmail(email: string) {
-    return this.db.select().from(users).where(eq(users.email, email)).get();
+    const result = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
+    return result[0] ?? null;
   }
 
   async findByUsername(username: string) {
-    return this.db
+    const result = await this.db
       .select()
       .from(users)
-      .where(eq(users.username, username))
-      .get();
+      .where(eq(users.username, username));
+    return result[0] ?? null;
   }
 
   async findById(id: number) {
-    return this.db.select().from(users).where(eq(users.id, id)).get();
+    const result = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
+    return result[0] ?? null;
   }
 
   // ─── Create / Update ──────────────────────────────────────────────────────
@@ -60,7 +68,7 @@ export class UsersService {
       .update(users)
       .set({
         isActive: false,
-        deletedAt: new Date().toISOString(),
+        deletedAt: new Date(),
       })
       .where(eq(users.id, userId));
   }
@@ -74,9 +82,7 @@ export class UsersService {
    * @param days  - Minimum number of days since deletedAt (default: 30)
    */
   async findInactiveOlderThan(days: number = 30): Promise<{ id: number }[]> {
-    const cutoff = new Date(
-      Date.now() - days * 24 * 60 * 60 * 1000,
-    ).toISOString();
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
     return this.db
       .select({ id: users.id })
@@ -87,8 +93,7 @@ export class UsersService {
           isNotNull(users.deletedAt), // must have a deletion timestamp
           lt(users.deletedAt, cutoff), // deletion was more than `days` days ago
         ),
-      )
-      .all();
+      );
   }
 
   /**

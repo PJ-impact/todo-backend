@@ -121,19 +121,18 @@ export class AuthService {
       return { message: 'Logged out successfully.' };
     }
 
-    // Convert JWT exp (Unix seconds) to ISO string for storage
+    // Convert JWT exp (Unix seconds) to Date for storage
     const expiresAt = decoded.exp
-      ? new Date(decoded.exp * 1000).toISOString()
-      : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // fallback: 24h
+      ? new Date(decoded.exp * 1000)
+      : new Date(Date.now() + 24 * 60 * 60 * 1000); // fallback: 24h
 
     // Insert into blacklist — if already there (duplicate logout), ignore gracefully
     const existing = await this.db
       .select()
       .from(tokenBlacklist)
-      .where(eq(tokenBlacklist.jti, decoded.jti))
-      .get();
+      .where(eq(tokenBlacklist.jti, decoded.jti));
 
-    if (!existing) {
+    if (!existing.length) {
       await this.db.insert(tokenBlacklist).values({
         jti: decoded.jti,
         expiresAt,
@@ -149,9 +148,8 @@ export class AuthService {
     const record = await this.db
       .select()
       .from(tokenBlacklist)
-      .where(eq(tokenBlacklist.jti, jti))
-      .get();
-    return !!record;
+      .where(eq(tokenBlacklist.jti, jti));
+    return record.length > 0;
   }
 
   // ─── Soft Delete Account ─────────────────────────────────────────────────────
@@ -198,7 +196,7 @@ export class AuthService {
       .createHash('sha256')
       .update(rawToken)
       .digest('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
     await this.db
       .delete(passwordResetTokens)
@@ -229,11 +227,12 @@ export class AuthService {
       .update(rawToken)
       .digest('hex');
 
-    const record = await this.db
+    const records = await this.db
       .select()
       .from(passwordResetTokens)
-      .where(eq(passwordResetTokens.tokenHash, tokenHash))
-      .get();
+      .where(eq(passwordResetTokens.tokenHash, tokenHash));
+
+    const record = records[0];
 
     if (!record) {
       throw new BadRequestException('Invalid or expired reset token.');
